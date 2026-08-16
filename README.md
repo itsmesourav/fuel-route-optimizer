@@ -2,14 +2,13 @@
 
 A Django-based API and web application that calculates a driving route between two locations in the USA and recommends cost-effective fuel stops along the route.
 
-The application considers a vehicle with a maximum range of 500 miles and fuel efficiency of 10 MPG. It uses the provided fuel-price dataset to select fuel stops while minimizing the overall fuel cost.
+The application considers a vehicle with a maximum range of 500 miles and fuel efficiency of 10 MPG. It uses the provided fuel-price dataset to select fuel stops while minimizing overall fuel cost.
 
 ## Features
 
 - Route calculation between two USA locations
 - Interactive route map
 - Fuel station data from the provided CSV dataset
-- Fuel station coordinates for map visualization
 - Fuel price comparison along the route
 - Cost-effective fuel stop optimization
 - 500-mile maximum vehicle range
@@ -18,9 +17,9 @@ The application considers a vehicle with a maximum range of 500 miles and fuel e
 - Total gallons purchased calculation
 - Total fuel cost calculation
 - Multiple fuel stops for long-distance routes
-- API validation for missing or invalid locations
+- Input validation and error handling
 - Interactive web interface
-- Postman-compatible REST API
+- REST API compatible with Postman
 
 ## Technology Stack
 
@@ -35,7 +34,7 @@ The application considers a vehicle with a maximum range of 500 miles and fuel e
 - Leaflet
 - OpenStreetMap
 - OSRM Routing API
-- SQLite for local Django development
+- SQLite for local development
 
 ## Project Structure
 
