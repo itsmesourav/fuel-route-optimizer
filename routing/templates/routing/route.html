@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Fuel Route Optimizer</title>
+
+    <!-- Leaflet CSS -->
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        crossorigin=""
+    >
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            color: #222;
+        }
+
+        header {
+            background: #1f2937;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0 0 8px;
+        }
+
+        header p {
+            margin: 0;
+            color: #d1d5db;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 25px auto;
+            padding: 0 20px;
+        }
+
+        .search-box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 15px;
+            align-items: end;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 7px;
+        }
+
+        input {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+
+        button {
+            padding: 11px 22px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        #map {
+            height: 500px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .results {
+            display: none;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 18px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .card-title {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .card-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .fuel-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .fuel-stop {
+            border-bottom: 1px solid #e5e7eb;
+            padding: 15px 0;
+        }
+
+        .fuel-stop:last-child {
+            border-bottom: none;
+        }
+
+        .fuel-stop h3 {
+            margin: 0 0 7px;
+        }
+
+        .fuel-stop p {
+            margin: 4px 0;
+            color: #555;
+        }
+
+        .error {
+            display: none;
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+
+        .loading {
+            display: none;
+            margin-top: 15px;
+            color: #2563eb;
+            font-weight: bold;
+        }
+
+        @media (max-width: 800px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .summary {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>Fuel Route Optimizer</h1>
+    <p>Find a cost-effective fuel route across the USA</p>
+</header>
+
+<div class="container">
+
+    <div class="search-box">
+
+        <div class="form-row">
+
+            <div>
+                <label for="start">Start Location</label>
+
+                <input
+                    type="text"
+                    id="start"
+                    placeholder="Example: Los Angeles, CA"
+                    value="Los Angeles, CA"
+                >
+            </div>
+
+            <div>
+                <label for="finish">Finish Location</label>
+
+                <input
+                    type="text"
+                    id="finish"
+                    placeholder="Example: Chicago, IL"
+                    value="Chicago, IL"
+                >
+            </div>
+
+            <button id="calculateButton">
+                Optimize Route
+            </button>
+
+        </div>
+
+        <div id="loading" class="loading">
+            Calculating route and fuel stops...
+        </div>
+
+        <div id="error" class="error"></div>
+
+    </div>
+
+
+    <div id="results" class="results">
+
+        <div class="summary">
+
+            <div class="card">
+                <div class="card-title">
+                    Route Distance
+                </div>
+
+                <div
+                    class="card-value"
+                    id="distance"
+                >
+                    -
+                </div>
+            </div>
+
+
+            <div class="card">
+                <div class="card-title">
+                    Travel Time
+                </div>
+
+                <div
+                    class="card-value"
+                    id="duration"
+                >
+                    -
+                </div>
+            </div>
+
+
+            <div class="card">
+                <div class="card-title">
+                    Fuel Cost
+                </div>
+
+                <div
+                    class="card-value"
+                    id="fuelCost"
+                >
+                    -
+                </div>
+            </div>
+
+
+            <div class="card">
+                <div class="card-title">
+                    Fuel Stops
+                </div>
+
+                <div
+                    class="card-value"
+                    id="stopCount"
+                >
+                    -
+                </div>
+            </div>
+
+        </div>
+
+
+        <div id="map"></div>
+
+
+        <div class="fuel-section">
+
+            <h2>
+                Recommended Fuel Stops
+            </h2>
+
+            <div id="fuelStops"></div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- Leaflet JavaScript -->
+<script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+    crossorigin=""
+</script>
+
+
+<script>
+
+    let map = null;
+    let routeLayer = null;
+    let markerLayer = null;
+
+
+    function initializeMap() {
+
+        if (map !== null) {
+            return;
+        }
+
+        map = L.map("map");
+
+        L.tileLayer(
+            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            {
+                attribution:
+                    '&copy; OpenStreetMap contributors'
+            }
+        ).addTo(map);
+
+        map.setView(
+            [39.8283, -98.5795],
+            4
+        );
+    }
+
+
+    function clearMap() {
+
+        if (routeLayer) {
+            map.removeLayer(routeLayer);
+            routeLayer = null;
+        }
+
+        if (markerLayer) {
+            map.removeLayer(markerLayer);
+            markerLayer = null;
+        }
+    }
+
+
+    function displayRoute(data) {
+
+        initializeMap();
+
+        clearMap();
+
+        /*
+         * OSRM returns coordinates as:
+         *
+         * [longitude, latitude]
+         *
+         * Leaflet expects:
+         *
+         * [latitude, longitude]
+         */
+
+        const coordinates =
+            data.route.geometry.coordinates.map(
+                point => [
+                    point[1],
+                    point[0]
+                ]
+            );
+
+
+        routeLayer = L.polyline(
+            coordinates,
+            {
+                weight: 5
+            }
+        ).addTo(map);
+
+
+        markerLayer =
+            L.layerGroup().addTo(map);
+
+
+        /*
+         * Start marker
+         */
+
+        L.marker([
+            data.start.latitude,
+            data.start.longitude
+        ])
+        .bindPopup(
+            "<b>Start</b><br>" +
+            data.start.display_name
+        )
+        .addTo(markerLayer);
+
+
+        /*
+         * Finish marker
+         */
+
+        L.marker([
+            data.finish.latitude,
+            data.finish.longitude
+        ])
+        .bindPopup(
+            "<b>Finish</b><br>" +
+            data.finish.display_name
+        )
+        .addTo(markerLayer);
+
+
+        /*
+         * Fuel station markers
+         */
+
+        data.fuel.stops.forEach(
+    (stop, index) => {
+
+        L.marker([
+            stop.latitude,
+            stop.longitude
+        ])
+        .bindPopup(
+            "<b>Fuel Stop " +
+            (index + 1) +
+            "</b><br>" +
+
+            stop.station_name +
+            "<br>" +
+
+            stop.city +
+            ", " +
+            stop.state +
+            "<br>" +
+
+            "$" +
+            stop.price_per_gallon +
+            "/gallon"
+        )
+        .addTo(markerLayer);
+
+    }
+);
+
+
+        map.fitBounds(
+            routeLayer.getBounds()
+        );
+    }
+
+
+
+    function displayFuelStops(stops) {
+
+        const container =
+            document.getElementById(
+                "fuelStops"
+            );
+
+        container.innerHTML = "";
+
+
+        if (stops.length === 0) {
+
+            container.innerHTML =
+                "<p>No fuel stops required.</p>";
+
+            return;
+        }
+
+
+        stops.forEach(
+            (stop, index) => {
+
+                const div =
+                    document.createElement(
+                        "div"
+                    );
+
+                div.className =
+                    "fuel-stop";
+
+
+                div.innerHTML = `
+                    <h3>
+                        ${index + 1}.
+                        ${stop.station_name}
+                    </h3>
+
+                    <p>
+                        <strong>Location:</strong>
+                        ${stop.city},
+                        ${stop.state}
+                    </p>
+
+                    <p>
+                        <strong>Position:</strong>
+                        ${stop.route_position_miles}
+                        miles
+                    </p>
+
+                    <p>
+                        <strong>Fuel Price:</strong>
+                        $${stop.price_per_gallon}/gallon
+                    </p>
+
+                    <p>
+                        <strong>Fuel Purchased:</strong>
+                        ${stop.gallons_purchased}
+                        gallons
+                    </p>
+
+                    <p>
+                        <strong>Cost:</strong>
+                        $${stop.fuel_cost}
+                    </p>
+                `;
+
+                container.appendChild(div);
+            }
+        );
+    }
+
+
+    function formatDuration(minutes) {
+
+        const hours =
+            Math.floor(minutes / 60);
+
+        const mins =
+            Math.round(minutes % 60);
+
+        return (
+            hours +
+            "h " +
+            mins +
+            "m"
+        );
+    }
+
+
+    async function calculateRoute() {
+
+        const start =
+            document.getElementById(
+                "start"
+            ).value.trim();
+
+        const finish =
+            document.getElementById(
+                "finish"
+            ).value.trim();
+
+
+        const button =
+            document.getElementById(
+                "calculateButton"
+            );
+
+        const loading =
+            document.getElementById(
+                "loading"
+            );
+
+        const error =
+            document.getElementById(
+                "error"
+            );
+
+
+        if (!start || !finish) {
+
+            error.textContent =
+                "Please enter both start and finish locations.";
+
+            error.style.display = "block";
+
+            return;
+        }
+
+
+        error.style.display = "none";
+
+        loading.style.display = "block";
+
+        button.disabled = true;
+
+
+        try {
+
+            const response =
+                await fetch(
+                    "/api/route/",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body: JSON.stringify({
+                            start: start,
+                            finish: finish
+                        })
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    data.error ||
+                    "Unable to calculate route."
+                );
+            }
+
+
+            /*
+             * Display summary
+             */
+
+            document.getElementById(
+                "distance"
+            ).textContent =
+                data.route.distance_miles +
+                " mi";
+
+
+            document.getElementById(
+                "duration"
+            ).textContent =
+                formatDuration(
+                    data.route.duration_minutes
+                );
+
+
+            document.getElementById(
+                "fuelCost"
+            ).textContent =
+                "$" +
+                data.fuel.total_fuel_cost;
+
+
+            document.getElementById(
+                "stopCount"
+            ).textContent =
+                data.fuel.stops.length;
+
+
+            /*
+ * Show results first
+ *
+ * The map must be visible before Leaflet
+ * calculates its size.
+ */
+
+document.getElementById(
+    "results"
+).style.display = "block";
+
+
+/*
+ * Display map
+ */
+
+displayRoute(data);
+
+
+/*
+ * Display fuel stops
+ */
+
+displayFuelStops(
+    data.fuel.stops
+);
+
+        }
+        catch (err) {
+
+            error.textContent =
+                err.message;
+
+            error.style.display =
+                "block";
+
+        }
+        finally {
+
+            loading.style.display =
+                "none";
+
+            button.disabled =
+                false;
+        }
+    }
+
+
+    document
+        .getElementById(
+            "calculateButton"
+        )
+        .addEventListener(
+            "click",
+            calculateRoute
+        );
+
+</script>
+
+</body>
+</html>
