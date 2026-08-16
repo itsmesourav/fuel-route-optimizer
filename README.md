@@ -23,7 +23,7 @@ The application considers a vehicle with a maximum range of 500 miles and fuel e
 
 ## Technology Stack
 
-- Python 3.14+
+- Python 3.14
 - Django 6.1
 - Django REST Framework
 - Pandas
